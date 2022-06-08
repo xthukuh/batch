@@ -16,7 +16,7 @@ REM Test rtrim
 echo Testing rtrim...
 set "val=%text%"
 echo - before "%val%"
-call :rtrim val "	"
+call :rtrim val
 echo - after  "%val%"
 goto :eof
 
@@ -25,7 +25,7 @@ REM Test ltrim
 echo Testing ltrim...
 set "val=%text%"
 echo - before "%val%"
-call :ltrim val "	"
+call :ltrim val
 echo - after  "%val%"
 goto :eof
 
@@ -34,53 +34,98 @@ REM Test trim
 echo Testing trim...
 set "val=%text%"
 echo - before "%val%"
-call :trim val "	"
+call :trim val
 echo - after  "%val%"
 goto :eof
 
 
 REM -------------- RIGHT TRIM STRING VAR (SPACE,TAB) ---------------
 :rtrim
-setlocal EnableDelayedExpansion
-call set "str=%%%~1%%"
+SetLocal EnableDelayedExpansion
+call set "val=%%%~1%%"
+set "ret=%~1"
+if "%val%" == "" (
+	set "val=%~1"
+	call set "ret=%%%~2%%"
+	if not "%ret%" == "" (
+		set "ret=%~2"
+	)
+)
+if "%ret%" == "" exit /b 1
 set "_tab=	"
 set "_space= "
 for /l %%a in (1,1,32) do (
-	set "_last_char=!str:~-1!"
+	set "_last_char=!val:~-1!"
 	if "!_last_char!" == "!_space!" (
-		set str=!str:~0,-1!
+		set val=!val:~0,-1!
 	) else if "!_last_char!" == "!_tab!" (
-		set str=!str:~0,-1!
+		set val=!val:~0,-1!
 	)
 )
-set "_last_char=!str:~-1!"
+set "_last_char=!val:~-1!"
 if "!_last_char!" == "!_space!" (
-	call :rtrim str
+	call :rtrim val
 ) else if "!_last_char!" == "!_tab!" (
-	call :rtrim str
+	call :rtrim val
 )
-endlocal & (
-	if "%~1" neq "" set "%~1=%str%"
+EndLocal & (
+	if "%ret%" neq "" set "%ret%=%val%"
 )
 exit /b
 
 REM -------------- LEFT TRIM STRING VAR (SPACE,TAB) ----------------
 :ltrim
-setlocal
-call set "str=%%%~1%%"
-for /f "tokens=*" %%a in ("%str%") do set "str=%%a"
-endlocal & (
-	if "%~1" neq "" set "%~1=%str%"
+SetLocal
+call set "val=%%%~1%%"
+set "ret=%~1"
+if "%val%" == "" (
+	set "val=%~1"
+	call set "ret=%%%~2%%"
+	if not "%ret%" == "" (
+		set "ret=%~2"
+	)
+)
+if "%ret%" == "" exit /b 1
+for /f "tokens=*" %%a in ("%val%") do set "val=%%a"
+EndLocal & (
+	if "%ret%" neq "" set "%ret%=%val%"
 )
 exit /b
 
 REM -------------- TRIM STRING VAR (SPACE,TAB) ---------------------
 :trim
-setlocal
-call set "str=%%%~1%%"
-call :rtrim str
-call :ltrim str
-endlocal & (
-	if "%~1" neq "" set "%~1=%str%"
+SetLocal
+call set "val=%%%~1%%"
+set "ret=%~1"
+if "%val%" == "" (
+	set "val=%~1"
+	call set "ret=%%%~2%%"
+	if not "%ret%" == "" (
+		set "ret=%~2"
+	)
+)
+if "%ret%" == "" exit /b 1
+call :rtrim val
+call :ltrim val
+EndLocal & (
+	if "%ret%" neq "" set "%ret%=%val%"
 )
 exit /b
+
+:trim_old
+setlocal
+call set "val=%%%~1%%"
+call :rtrim val
+call :ltrim val
+endlocal & (
+	if "%~1" neq "" set "%~1=%val%"
+)
+exit /b
+
+
+REM ---------------- misc ref ---------------------
+rem https://stackoverflow.com/questions/58313472/how-to-extract-a-word-after-specific-character-in-batch-program
+rem // Store line-break in variable:
+(set ^"LF=^
+%= blank line =%
+^")
