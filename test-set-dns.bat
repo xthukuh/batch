@@ -1,53 +1,51 @@
 @echo off
 
-set arg1=%~1
-set arg2=%~2
-echo arg1 = "%arg1%"
-echo arg2 = "%arg2%"
-goto :eof
-
 set "DNS1=8.8.8.8"
 set "DNS2=1.1.1.1"
+
+set arg1=%~1
+set arg2=%~2
+if "%arg1%" == "-" set "arg1="
+if "%arg1%" neq "" set "DNS1=%arg1%"
+if "%arg2%" neq "" set "DNS2=%arg2%"
+
 echo.
-echo Set net connection...
-echo Preferred DNS server: %DNS1%
-echo Alternate DNS server: %DNS2%
+echo Set net DNS...
+echo Preferred server: %DNS1%
+echo Alternate server: %DNS2%
 
-call :set_dns_values %*
-goto :eof
-
-:check_connected_interface
-setlocal enabledelayedexpansion
-FOR /F "tokens=*" %%G IN (
-	'netsh interface show interface'
-) do (
-	set "col=0"
+:set_connected_interface
+SetLocal EnableDelayedExpansion
+echo Checking connected interface...
+for /f "tokens=*" %%G in ('netsh interface show interface') do (
+	set "index=0"
 	set "status="
 	set "admin_status="
 	set "output_line=%%~G"
-	REM: echo ~ "!output_line!"
+	REM echo ~ "!output_line!"
 	for %%R in ("!output_line:  =" "!") do (
-		if not "%%~R" == "" (
-			for /f "tokens=*" %%a in ("%%~R") do set "val=%%a"
-			set /a "col=!col!+1"
-			REM echo !col! - "!val!"
-			if "!col!" == "1" (
+		set "val=%%~R"
+		if "!val!" neq "" (
+			call str-trim val
+			REM echo !index! - "!val!"
+			if "!index!" == "0" (
 				set "admin_status=!val!"
 			)
-			if "!col!" == "2" (
+			if "!index!" == "1" (
 				set "status=!val!"
 			)
-			if "!col!" == "4" (
+			if "!index!" == "3" (
 				if "!admin_status!" == "Enabled" (
 					if "!status!" == "Connected" (
 						call :interface_set_dns "!val!"
 					)
 				)
 			)
+			set /a "index=!index!+1"
 		)
 	)
 )
-endlocal
+EndLocal
 goto :eof
 
 :interface_set_dns
